@@ -8,59 +8,59 @@ import java.util.*
 import kotlin.math.*
 
 class TripleDialView @JvmOverloads constructor(c: Context, a: AttributeSet? = null) : View(c, a) {
-
-    private val bg = Paint().apply { color = Color.BLACK }
-    private val dial = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 3f; alpha = 180 }
-    private val num = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; textAlign = Paint.Align.CENTER }
+    private val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
+    private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.LTGRAY; style = Paint.Style.STROKE; strokeWidth = 3f }
+    private val txt = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; textAlign = Paint.Align.CENTER }
     private val hourP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.CYAN; strokeWidth = 10f; strokeCap = Paint.Cap.ROUND }
-    private val minP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.MAGENTA; strokeWidth = 7f; strokeCap = Paint.Cap.ROUND }
-    private val secP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.YELLOW; strokeWidth = 5f; strokeCap = Paint.Cap.ROUND }
-    private val center = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
-
-    private val cal = Calendar.getInstance()
+    private val minP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.MAGENTA; strokeWidth = 8f; strokeCap = Paint.Cap.ROUND }
+    private val secP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.YELLOW; strokeWidth = 6f; strokeCap = Paint.Cap.ROUND }
 
     override fun onDraw(canvas: Canvas) {
-        val w = width.toFloat()
-        val h = height.toFloat()
-        val cx = w/2f
-        val cy = h/2f
-        val r = min(w,h)*0.43f
-
+        val w = width.toFloat(); val h = height.toFloat()
+        val cx = w/2f; val cy = h/2f; val r = min(w,h)*0.43f
         canvas.drawRect(0f,0f,w,h,bg)
 
-        // dials
-        canvas.drawCircle(cx,cy,r, dial)
-        canvas.drawCircle(cx,cy,r*0.66f, dial)
-        canvas.drawCircle(cx,cy,r*0.33f, dial)
+        val rOut = r
+        val rMid = r*0.66f
+        val rIn = r*0.33f
 
-        // hour numbers 1-12 outer
-        num.textSize = r*0.11f
-        for (i in 1..12) {
-            val a = Math.toRadians(i*30.0 - 90)
-            canvas.drawText(i.toString(), cx + cos(a).toFloat()*r*0.82f, cy + sin(a).toFloat()*r*0.82f + num.textSize/3, num)
+        // rings
+        canvas.drawCircle(cx,cy,rOut,ring)
+        canvas.drawCircle(cx,cy,rMid,ring)
+        canvas.drawCircle(cx,cy,rIn,ring)
+
+        // outer hours 1-12
+        txt.textSize = rOut*0.09f
+        for(i in 1..12){
+            val a = Math.toRadians(i*30.0-90); val x = cx+cos(a).toFloat()*rOut*0.85f; val y = cy+sin(a).toFloat()*rOut*0.85f+txt.textSize/3
+            canvas.drawText(i.toString(),x,y,txt)
         }
-        // minute numbers
-        num.textSize = r*0.08f
-        for (i in 0 until 60 step 5) {
-            val a = Math.toRadians(i*6.0 - 90)
-            canvas.drawText(i.toString(), cx + cos(a).toFloat()*r*0.55f, cy + sin(a).toFloat()*r*0.55f + num.textSize/3, num)
+        // middle minutes
+        txt.textSize = rMid*0.075f
+        for(i in 0 until 60 step 5){
+            val a = Math.toRadians(i*6.0-90); val x = cx+cos(a).toFloat()*rMid*0.82f; val y = cy+sin(a).toFloat()*rMid*0.82f+txt.textSize/3
+            canvas.drawText(i.toString(),x,y,txt)
+        }
+        // inner seconds
+        txt.textSize = rIn*0.12f
+        for(i in 0 until 60 step 5){
+            val a = Math.toRadians(i*6.0-90); val x = cx+cos(a).toFloat()*rIn*0.7f; val y = cy+sin(a).toFloat()*rIn*0.7f+txt.textSize/3
+            canvas.drawText(i.toString(),x,y,txt)
         }
 
-        cal.timeInMillis = System.currentTimeMillis()
-        val h0 = cal.get(Calendar.HOUR)
-        val m0 = cal.get(Calendar.MINUTE)
-        val s0 = cal.get(Calendar.SECOND)
-        val ms = cal.get(Calendar.MILLISECOND)
+        val cal = Calendar.getInstance()
+        val hVal = cal.get(Calendar.HOUR) + cal.get(Calendar.MINUTE)/60f
+        val mVal = cal.get(Calendar.MINUTE) + cal.get(Calendar.SECOND)/60f
+        val sVal = cal.get(Calendar.SECOND) + cal.get(Calendar.MILLISECOND)/1000f
 
-        val sa = Math.toRadians((s0 + ms/1000.0)*6 - 90)
-        val ma = Math.toRadians((m0 + s0/60.0)*6 - 90)
-        val ha = Math.toRadians((h0 + m0/60.0)*30 - 90)
+        val ha = Math.toRadians(hVal*30.0-90); val ma = Math.toRadians(mVal*6.0-90); val sa = Math.toRadians(sVal*6.0-90)
 
-        canvas.drawLine(cx,cy, cx+cos(ha).toFloat()*r*0.5f, cy+sin(ha).toFloat()*r*0.5f, hourP)
-        canvas.drawLine(cx,cy, cx+cos(ma).toFloat()*r*0.62f, cy+sin(ma).toFloat()*r*0.62f, minP)
-        canvas.drawLine(cx,cy, cx+cos(sa).toFloat()*r*0.78f, cy+sin(sa).toFloat()*r*0.78f, secP)
+        // hands confined to their own dial
+        canvas.drawLine(cx,cy, cx+cos(ha).toFloat()*rOut*0.7f, cy+sin(ha).toFloat()*rOut*0.7f, hourP)
+        canvas.drawLine(cx,cy, cx+cos(ma).toFloat()*rMid*0.7f, cy+sin(ma).toFloat()*rMid*0.7f, minP)
+        canvas.drawLine(cx,cy, cx+cos(sa).toFloat()*rIn*0.7f,  cy+sin(sa).toFloat()*rIn*0.7f,  secP)
 
-        canvas.drawCircle(cx,cy,10f, center)
+        canvas.drawCircle(cx,cy,10f, Paint().apply{color=Color.WHITE})
 
         postInvalidateOnAnimation()
     }
